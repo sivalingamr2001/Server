@@ -1,78 +1,41 @@
 import RoleGuard from "@/components/RoleGuard"
-import { useAuth } from "@/context/AuthContext"
-import { UserRole } from "@/lib/constants"
-import { Navigate, type RouteObject } from "react-router-dom"
-
 import AppLayout from "@/layout/AppLayout"
 import { AuthLayout } from "@/layout/AuthLayout"
-import ErrorBountry from "@/pages/common/ErrorBountry"
+import { UserRole } from "@/lib/constants"
+import ErrorBoundary from "@/pages/common/ErrorBoundary"
 import { ProtectedRoute } from "@/pages/common/ProtectedRoute"
-
+import { Navigate, type RouteObject } from "react-router-dom"
 import * as Pages from "./pages"
 import { withSuspense } from "./withSuspense"
+import { useAuth } from "@/context/AuthContext"
 
 const HomeRedirect = () => {
-  const { currentUserRole, isAuthenticated } = useAuth()
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
-  }
-
-  const roleNameToIdMap = {
-    "Admin": UserRole.Admin,
-    "Operator": UserRole.Operator,
-    "Hod": UserRole.Hod,
-    "User": UserRole.User
-  };
-
-  const rawRoles = Array.isArray(currentUserRole) ? currentUserRole : [currentUserRole];
-
-  const userRolesList = rawRoles.map(
-    (roleName) => roleNameToIdMap[roleName as keyof typeof roleNameToIdMap]
-  );
-
-  if (userRolesList.includes(UserRole.Admin)) {
-    return <Navigate to="/dashboard" replace />
-  }
-  if (userRolesList.includes(UserRole.Operator)) {
-    return <Navigate to="/operator/dashboard" replace />
-  }
-  if (userRolesList.includes(UserRole.Hod)) {
-    return <Navigate to="/hod/pending-approvals" replace />
-  }
-  if (userRolesList.includes(UserRole.User)) {
-    return <Navigate to="/my-requests" replace />
-  }
-
-  return <Navigate to="/unauthorized" replace />
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return <Navigate to="/dashboard" replace />
 }
 
 export const routesConfig: RouteObject[] = [
   {
     element: <ProtectedRoute />,
-    errorElement: <ErrorBountry />,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         element: <AppLayout />,
-        errorElement: <ErrorBountry />,
+        errorElement: <ErrorBoundary />,
         children: [
           { index: true, element: <HomeRedirect /> },
           {
             path: "/unauthorized",
             element: withSuspense(Pages.UnauthorizedPage),
           },
+          { path: "/dashboard", element: withSuspense(Pages.DashboardPage) },
           {
-            path: "/profile",
-            element: withSuspense(Pages.UserProfilePage),
-          },
-          {
-            path: "/request/:requestId",
+            path: "/request/:requestId/item/:itemId",
             element: withSuspense(Pages.RequestDetailsPage),
           },
-
-          // --- USER PATHS ---
           {
-            element: <RoleGuard allowedRoles={[UserRole.User, UserRole.Hod]} />,
+            element: <RoleGuard allowedRoles={[UserRole.User]} />,
             children: [
               {
                 path: "/my-requests",
@@ -80,8 +43,6 @@ export const routesConfig: RouteObject[] = [
               },
             ],
           },
-
-          // --- HOD PATHS ---
           {
             element: <RoleGuard allowedRoles={[UserRole.Hod]} />,
             children: [
@@ -95,18 +56,16 @@ export const routesConfig: RouteObject[] = [
               },
             ],
           },
-
-          // --- OPERATOR PATHS ---
           {
             element: <RoleGuard allowedRoles={[UserRole.Operator]} />,
             children: [
               {
-                path: "/operator/dashboard",
-                element: withSuspense(Pages.DashboardPage),
-              },
-              {
                 path: "/operator/approval-queue",
                 element: withSuspense(Pages.ApprovalQueuePage),
+              },
+              {
+                path: "/operator/active-access",
+                element: withSuspense(Pages.ActiveAccessPage),
               },
               {
                 path: "/operator/all-requests",
@@ -114,15 +73,9 @@ export const routesConfig: RouteObject[] = [
               },
             ],
           },
-
-          // --- ADMIN PATHS ---
           {
             element: <RoleGuard allowedRoles={[UserRole.Admin]} />,
             children: [
-              {
-                path: "/dashboard",
-                element: withSuspense(Pages.DashboardPage),
-              },
               { path: "/users", element: withSuspense(Pages.UsersPage) },
               {
                 path: "/folder-mapping",
@@ -140,13 +93,10 @@ export const routesConfig: RouteObject[] = [
   },
   {
     element: <AuthLayout />,
-    children: [
-      { index: true, element: <Navigate to="/login" replace /> },
-      { path: "/login", element: withSuspense(Pages.LoginPage) },
-      {
-        path: "/logs",
-        element: withSuspense(Pages.LogViewerDashboard),
-      },
-    ],
+    children: [{ path: "/login", element: withSuspense(Pages.LoginPage) }],
+  },
+  {
+    path: "*",
+    element: <HomeRedirect />,
   },
 ]

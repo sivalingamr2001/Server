@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { PagedResult } from "@/api"
-import type { Result } from "@/api/types"
+import type { PagedResult, Result } from "@/api/types"
 
 export interface UsePaginatedDataGridOptions {
   pageSize?: number

@@ -4,7 +4,9 @@ import { useState, useEffect } from "react"
 export default Logo
 
 export const ENV_CONFIG = {
-  BASE_API_URL: import.meta.env.DEV ? import.meta.env.VITE_BASE_API_URL : "/access-portal/api",
+  BASE_API_URL: import.meta.env.DEV
+    ? import.meta.env.VITE_BASE_API_URL
+    : "access_portal/api",
 }
 
 export function useDebounce<T>(value: T, delay?: number): T {
@@ -19,16 +21,10 @@ export function useDebounce<T>(value: T, delay?: number): T {
 }
 
 export const UserRole = {
-  Admin: 1,
-  Operator: 2,
-  Hod: 3,
-  User: 4,
+  User: "user",
+  Hod: "hod",
+  Operator: "operator",
+  Admin: "admin",
 } as const
 
-export const getInitials = (name: string) => {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-}
+export type UserRoleType = (typeof UserRole)[keyof typeof UserRole]

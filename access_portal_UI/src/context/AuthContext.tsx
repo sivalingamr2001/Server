@@ -7,16 +7,17 @@ import {
   type ReactNode,
 } from "react"
 
+import type { LoginResponseDto } from "@/api"
 import useSessionStorage from "@/hooks/useSessionStorage"
-import type { PortalUserDetails } from "@/api/types"
 
 const STORAGE_KEY = "jan_AP_user"
 
 type AuthContextType = {
-  currentUser: PortalUserDetails | null
+  currentUser: LoginResponseDto | null
   currentUserRole: string | null
   isAuthenticated: boolean
-  login: (user: any, expireInMinutes?: number) => void
+  isLoading: boolean
+  login: (authData: LoginResponseDto, expireInMinutes?: number) => void
   logout: () => void
 }
 
@@ -25,47 +26,39 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { get, set, remove } = useSessionStorage()
 
-  const [currentUser, setCurrentUser] = useState<any | null>(undefined)
+  const [currentUser, setCurrentUser] = useState<LoginResponseDto | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
   useEffect(() => {
-    const user = get(STORAGE_KEY)
-
-    setCurrentUser(user)
+    const storedUser = get<LoginResponseDto>(STORAGE_KEY)
+    if (storedUser) {
+      setCurrentUser(storedUser)
+    }
+    setIsLoading(false)
   }, [get])
 
-  const login = (user: any, expireInMinutes = 30) => {
-    set(STORAGE_KEY, user, expireInMinutes)
-
-    setCurrentUser(user)
+  const login = (authData: LoginResponseDto, expireInMinutes = 30) => {
+    if (authData.isAuthenticated && authData.currentUser) {
+      set(STORAGE_KEY, authData, expireInMinutes)
+      setCurrentUser(authData)
+    }
   }
 
   const logout = () => {
     remove(STORAGE_KEY)
-
     setCurrentUser(null)
   }
 
   const value = useMemo(
     () => ({
       currentUser,
-
-      currentUserRole: (() => {
-        const rawRole = currentUser?.user?.role;
-        if (!rawRole) return [];
-        try {
-          return typeof rawRole === "string" ? JSON.parse(rawRole) : rawRole;
-        } catch (e) {
-          return [rawRole];
-        }
-      })(),
-
-      isAuthenticated: !!currentUser,
-
+      currentUserRole: currentUser?.currentUserRole ?? null,
+      isAuthenticated: currentUser?.isAuthenticated ?? false,
+      isLoading,
       login,
-
       logout,
     }),
-    [currentUser]
+    [currentUser, isLoading]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -73,10 +66,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
-
   if (!context) {
     throw new Error("useAuth must be used inside AuthProvider")
   }
-
   return context
 }

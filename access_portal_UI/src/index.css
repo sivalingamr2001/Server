@@ -7,7 +7,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklab(99.577% -0.00578 0.01183);
+  --background: oklch(0.98 0.004 245);
   --foreground: oklch(0.25 0.03 245);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.25 0.03 245);
@@ -32,7 +32,7 @@
   --chart-4: oklch(0.79 0.07 235);
   --chart-5: oklch(0.87 0.04 230);
   --radius: 0.5rem;
-  --sidebar: oklab(99.577% -0.00578 0.01183);
+  --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.25 0.03 245);
   --sidebar-primary: oklch(0.64 0.18 255);
   --sidebar-primary-foreground: oklch(0.98 0.01 245);
@@ -139,42 +139,21 @@
   }
 }
 
-@layer base {
-  /* 1. Standard approach for Firefox */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
-    transition: scrollbar-color 0.3s ease;
-  }
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 
-  /* Show color on hover for Firefox */
-  *:hover {
-    scrollbar-color: theme("colors.border") transparent;
-  }
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 
-  /* 2. Webkit Browsers (Chrome, Safari, Edge) */
-  ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
-  }
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 153, 255, 0.15);
+  border-radius: 3px;
+}
 
-  ::-webkit-scrollbar-track {
-    background: transparent; /* Auto-hide effect */
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: transparent; /* Hidden by default */
-    border-radius: 10px;
-    transition: background 0.3s ease;
-  }
-
-  /* Only show the thumb when hovering over the scrollable container */
-  *:hover::-webkit-scrollbar-thumb {
-    background: theme("colors.muted-foreground / 30%");
-  }
-
-  /* Make thumb darker when hovering directly over the scrollbar */
-  ::-webkit-scrollbar-thumb:hover {
-    background: theme("colors.muted-foreground / 50%") !important;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 153, 255, 0.623);
 }

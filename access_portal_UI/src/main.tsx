@@ -16,8 +16,8 @@ const modules = [AllCommunityModule]
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>
-      <Toaster position="top-right" richColors />
       <TooltipProvider>
+        <Toaster position="top-right" richColors />
         <SidebarProvider>
           <AuthProvider>
             <AgGridProvider modules={modules}>

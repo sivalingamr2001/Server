@@ -10,33 +10,25 @@ export const RootRedirect = () => {
     return <Navigate to="/login" replace />
   }
 
-  // 1. Normalize into a raw array while treating null/undefined as an empty array
-  const incomingRoles = Array.isArray(currentUserRole) 
-    ? currentUserRole 
-    : currentUserRole 
-      ? [currentUserRole] 
-      : [];
+  const userRoleNumeric = roleStringToNumeric(currentUserRole)
 
-  // 2. Filter out any null elements and explicitly type as clean string[]
-  const rawRoles: string[] = incomingRoles.filter(
-    (role): role is string => typeof role === 'string'
-  );
+  console.log(
+    "Mapped Role:",
+    userRoleNumeric,
+    "Expected User Enum:",
+    UserRole.User
+  )
 
-  // 3. Now .flatMap will compile cleanly without type issues
-  const userRolesList: number[] = rawRoles.flatMap((role) => roleStringToNumeric(role));
-
-  if (userRolesList.includes(UserRole.Admin)) {
-    return <Navigate to="/dashboard" replace />
+  switch (userRoleNumeric) {
+    case UserRole.Admin:
+      return <Navigate to="/dashboard" replace />
+    case UserRole.Operator: // Operator
+      return <Navigate to="/operator/dashboard" replace />
+    case UserRole.Hod:
+      return <Navigate to="/hod/pending-approvals" replace />
+    case UserRole.User:
+      return <Navigate to="/my-requests" replace />
+    default:
+      return <Navigate to="/dashboard" replace />
   }
-  if (userRolesList.includes(UserRole.Operator)) {
-    return <Navigate to="/operator/dashboard" replace />
-  }
-  if (userRolesList.includes(UserRole.Hod)) {
-    return <Navigate to="/hod/pending-approvals" replace />
-  }
-  if (userRolesList.includes(UserRole.User)) {
-    return <Navigate to="/my-requests" replace />
-  }
-
-  return <Navigate to="/unauthorized" replace />
 }

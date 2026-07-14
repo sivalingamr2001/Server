@@ -8,7 +8,7 @@ namespace Server.Features.AccessRequest;
 /// Manages access requests and their lifecycle (CRUD + workflow operations)
 /// </summary>
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/[controller]")]
 [Produces("application/json")]
 [EnableRateLimiting("fixed")]
 public class AccessRequestController : ControllerBase

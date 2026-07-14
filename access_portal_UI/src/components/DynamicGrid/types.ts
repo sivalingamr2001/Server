@@ -1,121 +1,25 @@
-import type {
-  ColDef,
-  GridApi,
-  GridReadyEvent,
-  RowClickedEvent,
-  SelectionChangedEvent,
-  FilterChangedEvent,
-  SortChangedEvent,
-  PaginationChangedEvent,
-} from "ag-grid-community"
-import type { ReactNode } from "react"
+import type { ColDef, GridOptions } from "ag-grid-community"
 
-export interface ActionButtonProps {
+export interface GridActionButton {
   label: string
-  onClick: (api: GridApi | null) => void
-  icon?: ReactNode
-  variant?:
-    | "default"
-    | "destructive"
-    | "outline"
-    | "secondary"
-    | "ghost"
-    | "link"
+  onClick: () => void
+  variant?: "primary" | "secondary" | "danger"
+  isDisabled?: boolean
+  icon?: React.ComponentType<{ className?: string }>
 }
 
-// Configuration schema for dynamic expansion sections
-export interface DetailSectionConfig {
-  title: string
-  objectKey: string
-  hiddenFields?: string[]
-}
-
-export interface VirtualScrollProps {
-  enabled?: boolean
-  onLoadMore?: (page: number) => Promise<unknown>
-  pageSize?: number
-  bufferSize?: number
-  currentPage?: number
-  totalPages?: number
-  hasMore?: boolean
-}
-
-export interface DataGridProps<TData extends object = object> {
-  rowData: TData[]
-  columnDefs: (Omit<ColDef<TData>, "field"> & { field?: string })[]
-  title?: string
-  gridId?: string
-  loading?: boolean
-  pageSize?: number
-  pageSizeOptions?: number[]
-  rowSelection?: "single" | "multiple" | "none"
-  animateRows?: boolean
-  showSearch?: boolean
-  showRefreshButton?: boolean
-  showClearFiltersButton?: boolean
-  customActions?: ActionButtonProps[]
-  noRowsMessage?: string
-  loadingMessage?: string
-  onRefresh?: () => void | Promise<void>
-  onGridReady?: (api: GridApi<TData>) => void
-  onSearchChange?: (value: string) => void
-  onRowClicked?: (event: RowClickedEvent<TData>) => void
-  onSelectionChanged?: (selectedRows: TData[]) => void
-  onFilterChanged?: (event: FilterChangedEvent<TData>) => void
-  onSortChanged?: (event: SortChangedEvent<TData>) => void
-  onPaginationChanged?: (event: PaginationChangedEvent<TData>) => void
-  onClearFilters?: () => void | Promise<void>
-  className?: string
-  gridHeight?: string | number
-  compact?: boolean
-  theme?: "light" | "dark" | "system"
-  defaultColDef?: ColDef<TData>
-
-  // Dynamic Master-Detail Configuration Flags
-  masterDetail?: boolean
-  detailSections?: DetailSectionConfig[]
-
-  // Virtual scrolling configuration
-  virtualScroll?: VirtualScrollProps
-}
-
-export interface DataGridState {
-  quickFilter: string
-  selectedCount: number
-  totalRows: number
-  filteredRows: number
-  currentPage: number
-  totalPages: number
-  activeFiltersCount: number
-  isRefreshing: boolean
-}
-
-export interface UseDataGridReturn<TData extends object> {
-  gridApiRef: React.RefObject<GridApi<TData> | null>
-  state: DataGridState
-  handlers: {
-    onGridReady: (event: GridReadyEvent<TData>) => void
-    onQuickFilterChange: (value: string) => void
-    onClearFilters: () => void
-    onRefresh: () => Promise<void>
-    onSelectionChanged: (event: SelectionChangedEvent<TData>) => void
-    onFilterChanged: (event: FilterChangedEvent<TData>) => void
-    onSortChanged: (event: SortChangedEvent<TData>) => void
-    onPaginationChanged: (event: PaginationChangedEvent<TData>) => void
-  }
-}
-
-export interface GridToolbarProps {
+export interface Props {
   title: string
   description?: string
-  state: DataGridState
-  showSearch: boolean
-  showRefresh: boolean
-  showClearFilters: boolean
-  onQuickFilterChange: (value: string) => void
-  onSearchChange?: (value: string) => void
-  onRefresh: () => void
-  onClearFilters: () => void
-  customActions?: ActionButtonProps[]
-  gridApi: GridApi | null
+  isLoading?: boolean
+  rowData: any[]
+  columnDefs: ColDef[]
+  hasSearch?: boolean
+  hasRefresh?: boolean
+  onRefresh?: () => void
+  actionButtons?: GridActionButton[]
+  PageSize?: number
+  PageNumber?: number
+  PageOptions?: number[]
+  gridOptions?: GridOptions
 }

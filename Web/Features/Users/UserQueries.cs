@@ -14,6 +14,32 @@ public static class UserQueries
             IsActive 
         FROM jan_portal_users;";
 
+    public const string GetPortalUsersByIds = @"
+    SELECT 
+        Id AS UserId, 
+        Role, 
+        Location, 
+        CreatedOn, 
+        CreatedBy, 
+        ModifiedBy, 
+        ModifiedOn, 
+        IsActive 
+    FROM jan_portal_users
+    WHERE Id IN @Ids;";
+
+    public const string GetPortalUsersByIdsAndRole = @"
+    SELECT 
+        Id AS UserId, 
+        Role, 
+        Location, 
+        CreatedOn, 
+        CreatedBy, 
+        ModifiedBy, 
+        ModifiedOn, 
+        IsActive 
+    FROM jan_portal_users
+    WHERE Id IN @Ids AND Role = @Role;";
+
     public const string GetPortalUsersByRole = @"
         SELECT 
             Id AS UserId, 
@@ -53,6 +79,15 @@ public static class UserQueries
        OR MAIL_ID = @Id 
        OR EMP_ID = @Id;";
 
+    public const string GetAllComplianceUsers = @"SELECT
+            CMPL_USER_ID AS UserId, 
+            CMPL_USER_NAME AS UserName, 
+            EMP_ID AS EmpId, 
+            MAIL_ID AS MailId, 
+            MOB_NO AS MobNo, 
+            DEPT_ID AS DeptId
+        FROM itsr_users";
+
     public const string GetComplianceUsersByIds = @"
         SELECT 
             CMPL_USER_ID AS UserId, 
@@ -61,7 +96,7 @@ public static class UserQueries
             MAIL_ID AS MailId, 
             MOB_NO AS MobNo, 
             DEPT_ID AS DeptId 
-        FROM cmplusers 
+        FROM itsr_users 
         WHERE CMPL_USER_ID IN @Ids;";
 
     public const string UpdateUserPortalProfile = @"

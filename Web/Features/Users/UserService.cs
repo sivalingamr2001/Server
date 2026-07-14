@@ -14,45 +14,45 @@ public sealed class UserService(
     public const string CmplConnectionKey = "MySQLConnection_CMPL";
     private readonly string _cmplConnectionString = configuration.GetConnectionString(CmplConnectionKey) ?? throw new InvalidOperationException($"Connection string '{CmplConnectionKey}' not found in configuration.");
 
-    // ═══════════════════════════════════════════════════════
-    // GET ALL PROFILES
-    // ═══════════════════════════════════════════════════════
     public async Task<Result<IEnumerable<UserDto>>> GetUserPortalProfilesAsync(CancellationToken ct = default)
     {
         try
         {
-            _logger.LogInformation("Fetching base portal data from default database connection.");
+            _logger.LogInformation("Fetching mapping compliance columns from connection: {Connection}", "_cmplConnectionString");
 
-            // 1. Fetch portal users directly into UserDto using alias SQL naming layouts
-            var portalUsers = (await _executor.QueryAsync<UserDto>(
-                UserQueries.GetPortalUsersBase,
+            // 1. Fetch compliance records first via the explicitly named connection overload
+            var complianceUsers = (await _executor.QueryAsync<UserDto>(
+                UserQueries.GetAllComplianceUsers,
+                connectionName: CmplConnectionKey,
                 cancellationToken: ct
             )).ToList();
 
-            if (!portalUsers.Any())
+            if (!complianceUsers.Any())
             {
                 return Result<IEnumerable<UserDto>>.Success(Enumerable.Empty<UserDto>());
             }
 
-            // 2. Extract distinct integer IDs to query the compliance system
-            var userIds = portalUsers.Select(x => x.UserId).Distinct().ToList();
+            // 2. Extract distinct integer IDs to query the core portal system
+            var userIds = complianceUsers.Select(x => x.UserId).Distinct().ToList();
 
-            _logger.LogInformation("Fetching mapping compliance columns from connection: {Connection}", CmplConnectionKey);
+            _logger.LogInformation("Fetching matching portal data from default database connection for {Count} users.", userIds.Count);
 
-            // 3. Query the compliance database using the explicitly named connection overload
-            var complianceUsers = (await _executor.QueryAsync<UserDto>(
-                UserQueries.GetComplianceUsersByIds,
-                connectionName: CmplConnectionKey,
-                parameters: new { Ids = userIds },
+            // 3. Query the portal database using the extracted IDs to avoid massive, unnecessary memory loads
+            var portalUsers = (await _executor.QueryAsync<UserDto>(
+                UserQueries.GetPortalUsersByIds,
+                parameters: new { Ids = userIds }, // Pass the list directly; Dapper automatically unrolls this into an IN clause
                 cancellationToken: ct
-            )).ToDictionary(x => x.UserId);
+            ))
+            // GroupBy + First handles any accidental duplicate UserId records in the portal table safely
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.First());
 
-            // 4. Merge cross-database structures cleanly in-memory
-            var combinedProfiles = portalUsers.Select(portal =>
+            // 4. Merge cross-database structures cleanly in-memory, driving off the compliance collection
+            var combinedProfiles = complianceUsers.Select(cmpl =>
             {
-                complianceUsers.TryGetValue(portal.UserId, out var cmpl);
-                return MergeUserProperties(portal, cmpl);
-            });
+                portalUsers.TryGetValue(cmpl.UserId, out var portal);
+                return MergeUserProperties(portal ?? new UserDto { UserId = cmpl.UserId }, cmpl);
+            }).ToList();
 
             return Result<IEnumerable<UserDto>>.Success(combinedProfiles);
         }
@@ -63,6 +63,7 @@ public sealed class UserService(
         }
     }
 
+
     // ═══════════════════════════════════════════════════════
     // GET HOD PROFILES
     // ═══════════════════════════════════════════════════════
@@ -70,36 +71,45 @@ public sealed class UserService(
     {
         try
         {
-            _logger.LogInformation("Fetching HOD records from core system profile tracker database.");
+            // Fix Connection Key naming convention issues here if passing a registered key alias name
+            _logger.LogInformation("Resolving HOD employee system identities via connection: {Connection}", CmplConnectionKey);
 
-            // 1. Fetch filtered role elements directly into UserDto patterns
-            var portalHods = (await _executor.QueryAsync<UserDto>(
-                UserQueries.GetPortalUsersByRole,
-                new { Role = "Hod" },
+            // 1. Fetch compliance records first via the explicitly named connection overload
+            var complianceHods = (await _executor.QueryAsync<UserDto>(
+                UserQueries.GetAllComplianceUsers,
+                connectionName: CmplConnectionKey,
                 cancellationToken: ct
             )).ToList();
 
-            if (!portalHods.Any())
+            if (!complianceHods.Any())
             {
                 return Result<IEnumerable<UserDto>>.Success(Enumerable.Empty<UserDto>());
             }
 
-            var hodIds = portalHods.Select(x => x.UserId).Distinct().ToList();
+            // 2. Extract distinct integer IDs to query the core portal system
+            var hodIds = complianceHods.Select(x => x.UserId).Distinct().ToList();
 
-            _logger.LogInformation("Resolving corresponding employee system identities via connection: {Connection}", CmplConnectionKey);
+            _logger.LogInformation("Fetching corresponding HOD records from core system profile tracker database.");
 
-            var complianceData = (await _executor.QueryAsync<UserDto>(
-                UserQueries.GetComplianceUsersByIds,
-                connectionName: CmplConnectionKey,
-                parameters: new { Ids = hodIds },
+            // 3. Query the portal database using the extracted IDs and explicit Role filtering
+            var portalData = (await _executor.QueryAsync<UserDto>(
+                UserQueries.GetPortalUsersByIdsAndRole, // Corrected to use your specific query constant
+                parameters: new { Ids = hodIds, Role = "Hod" }, // Safely passes both target variables into the SQL statement
                 cancellationToken: ct
-            )).ToDictionary(x => x.UserId);
+            ))
+            // GroupBy + First guards against duplicate runtime exceptions if user IDs repeat in the portal database
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.First());
 
-            var hodProfiles = portalHods.Select(portal =>
-            {
-                complianceData.TryGetValue(portal.UserId, out var cmpl);
-                return MergeUserProperties(portal, cmpl);
-            });
+            // 4. Cleanly filter out any compliance record that does not match an actual active HOD layout
+            var hodProfiles = complianceHods
+                .Where(cmpl => portalData.ContainsKey(cmpl.UserId)) // Ensures only users verified as "Hod" in the portal database are returned
+                .Select(cmpl =>
+                {
+                    portalData.TryGetValue(cmpl.UserId, out var portal);
+                    return MergeUserProperties(portal!, cmpl);
+                })
+                .ToList();
 
             return Result<IEnumerable<UserDto>>.Success(hodProfiles);
         }
@@ -109,6 +119,7 @@ public sealed class UserService(
             return Result<IEnumerable<UserDto>>.Failure("Database.Error", "An unexpected failure occurred querying the target datasets.");
         }
     }
+
 
     // ═══════════════════════════════════════════════════════
     // GET PROFILE BY ID

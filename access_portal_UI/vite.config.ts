@@ -6,14 +6,10 @@ import { defineConfig } from "vite"
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: "/access-portal/",
+  base: "/access-portal",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  },
-  build: {
-    outDir: path.resolve(__dirname, "../Artifact/wwwroot"),
-    emptyOutDir: true,
   },
 })
