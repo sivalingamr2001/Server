@@ -1,5 +1,3 @@
-// ─── Enums (Slightly altered to plain-object unions for erasableSyntaxOnly compatibility) ───
-
 export const AccessItemStatus = {
   Submitted: 0,
   HodApproved: 1,
