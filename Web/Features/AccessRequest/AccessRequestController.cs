@@ -164,22 +164,28 @@ public class AccessRequestController : ControllerBase
     }
 
     [HttpGet("get-hodby-folderpath")]
-    public async Task<Result<HodConfigurationDto>> GetHodByFolderPath(
-    string folderPath,
-    CancellationToken ct = default)
+    public async Task<ActionResult<Result<HodConfigurationDto>>> GetHodByFolderPath(
+        [FromQuery] string folderPath,
+        CancellationToken ct = default)
     {
         var result = await _service.GetHodByFolderPathAsync(folderPath, ct);
 
         if (result.IsFailure)
         {
-            return Result<HodConfigurationDto>.Failure(result.Error.Code, result.Error.Message);
+            // Maps business rules to explicit HTTP status codes
+            if (result.Error.Code == "NotFound")
+            {
+                return NotFound(Result<HodConfigurationDto>.Failure(result.Error.Code, result.Error.Message));
+            }
+
+            return BadRequest(Result<HodConfigurationDto>.Failure(result.Error.Code, result.Error.Message));
         }
 
-        // Convert the tuple from the service into the JSON-serializable DTO
+        // Unpack the tuple value payload directly
         var (primary, secondary) = result.Value;
         var dto = new HodConfigurationDto(primary, secondary);
 
-        return Result<HodConfigurationDto>.Success(dto);
+        return Ok(Result<HodConfigurationDto>.Success(dto));
     }
 
     /// <summary>

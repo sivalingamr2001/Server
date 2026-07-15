@@ -1,23 +1,27 @@
-import accessManagementApi from "@/api/accessManagementApi"
+import { userService } from "@/api"
 import { Input } from "@/components/ui/input"
 import { useEffect, useState, useMemo } from "react"
 
 export interface SelectedHod {
-  employeeId: string 
-  email: string      
-  hodName: string    
+  userId: number
+  employeeId: string
+  email: string
+  hodName: string
 }
 
 interface HodSelectProps {
   value?: SelectedHod | null
   onChange: (hod: SelectedHod) => void
   placeholder?: string
+  // Added to accept primary and secondary choices from folder mapping
+  hodOptions?: SelectedHod[]
 }
 
 export const HodSelect = ({
   value,
   onChange,
   placeholder = "Search and select HOD...",
+  hodOptions = [], // Default to an empty array if not provided
 }: HodSelectProps) => {
   const getDisplayString = (empId?: string, name?: string) => {
     if (!empId && !name) return ""
@@ -38,7 +42,7 @@ export const HodSelect = ({
     const fetchAllHods = async () => {
       setLoading(true)
       try {
-        const data = await accessManagementApi.users.getAllHod()
+        const data = await userService.getHodPortalProfiles()
         setHodList(Array.isArray(data) ? data : [])
       } catch (error) {
         console.error("Failed to fetch HOD list:", error)
@@ -61,15 +65,39 @@ export const HodSelect = ({
 
   // 3. Synchronize search text display value when external state changes
   useEffect(() => {
-    if (value) {
-      setSearch(getDisplayString(value.employeeId, value.hodName))
-    } else {
+    if (!value?.employeeId) {
       setSearch("")
+      return
     }
-  }, [value])
 
-  const handleSelect = (employeeId: string, email: string, hodName: string) => {
+    // Combine custom folder-bound options with the master fetched registry list for cross-matching search displays
+    const activeLookupList = hodOptions.length > 0 ? hodOptions : hodList
+
+    const matchedHod = activeLookupList.find((hod: any) => {
+      const candidateIds = [
+        hod?.empId,
+        hod?.userId,
+        hod?.employeeId,
+        hod?.emP_ID,
+        hod?.cmpL_USER_ID,
+        hod?.id,
+      ]
+        .filter(Boolean)
+        .map((id) => String(id).trim().toLowerCase())
+
+      return candidateIds.includes(String(value.employeeId).trim().toLowerCase())
+    })
+
+    const matchedName = matchedHod
+      ? String(matchedHod.userName || matchedHod.hodName || matchedHod.cmpL_USER_NAME || matchedHod.name || "")
+      : value.hodName
+
+    setSearch(getDisplayString(value.employeeId, matchedName))
+  }, [value?.employeeId, value?.hodName, hodList, hodOptions])
+
+  const handleSelect = (employeeId: string, email: string, hodName: string, userId: number) => {
     onChange({
+      userId,
       employeeId: String(employeeId).trim(),
       email: String(email).trim(),
       hodName: hodName.trim(),
@@ -80,6 +108,11 @@ export const HodSelect = ({
 
   // 4. Memory-cached local client-side filter computation
   const filteredHodList = useMemo(() => {
+    // CRITICAL FIX: If folder path options are available, prioritize them over the master list
+    if (hodOptions && hodOptions.length > 0) {
+      return hodOptions
+    }
+
     const normalizedSearch = search.trim().toLowerCase()
     if (!normalizedSearch) return hodList
 
@@ -88,15 +121,15 @@ export const HodSelect = ({
     if (value && currentCompound === normalizedSearch) return hodList
 
     return hodList.filter((hod: any) => {
-      const empIdStr = String(hod.emP_ID || hod.cmpL_USER_ID || "").trim().toLowerCase()
-      const nameStr = String(hod.cmpL_USER_NAME || "").trim().toLowerCase()
-      const emailStr = String(hod.maiL_ID || "").trim().toLowerCase()
+      const empIdStr = String(hod.empId || hod.emP_ID || hod.cmpL_USER_ID || "").trim().toLowerCase()
+      const nameStr = String(hod.userName || hod.cmpL_USER_NAME || "").trim().toLowerCase()
+      const emailStr = String(hod.mailId || hod.maiL_ID || "").trim().toLowerCase()
 
       return [empIdStr, nameStr, emailStr].some((val) =>
         val.includes(normalizedSearch)
       )
     })
-  }, [search, hodList, value])
+  }, [search, hodList, value, hodOptions])
 
   return (
     <div className="relative">
@@ -118,23 +151,24 @@ export const HodSelect = ({
           className="absolute top-full z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover shadow-md"
           onClick={(e) => e.stopPropagation()}
         >
-          {loading && (
+          {loading && hodOptions.length === 0 && (
             <div className="p-3 text-center text-sm text-muted-foreground">
               Loading HOD records...
             </div>
           )}
 
-          {!loading && filteredHodList.length === 0 && (
+          {filteredHodList.length === 0 && (
             <div className="p-3 text-center text-sm text-muted-foreground">
               No matching HOD records found
             </div>
           )}
 
-          {!loading &&
-            filteredHodList.map((hod: any) => {
-              const currentEmpId = String(hod.emP_ID || hod.cmpL_USER_ID || "")
-              const currentEmail = String(hod.maiL_ID || "")
-              const displayName = String(hod.cmpL_USER_NAME || "N/A")
+          {filteredHodList.map((hod: any) => {
+              // Gracefully handle properties mapped from either the master array schema or our SelectedHod structure
+              const currentEmpId = String(hod.employeeId || hod.empId || hod.emP_ID || hod.cmpL_USER_ID || "")
+              const currentEmail = String(hod.email || hod.mailId || hod.maiL_ID || "")
+              const displayName = String(hod.hodName || hod.userName || hod.cmpL_USER_NAME || "N/A")
+              const currentUserId = Number(hod.userId ?? hod.cmpL_USER_ID ?? hod.id ?? 0)
 
               const isNoEmail =
                 !currentEmail || currentEmail.trim().toLowerCase() === "no email"
@@ -145,11 +179,10 @@ export const HodSelect = ({
               return (
                 <button
                   type="button"
-                  key={`${currentEmpId}-${currentEmail}`}
-                  className={`w-full px-3 py-2 text-left hover:bg-accent text-sm ${
-                    isSelected ? "bg-accent font-medium text-accent-foreground" : ""
-                  }`}
-                  onClick={() => handleSelect(currentEmpId, currentEmail, displayName)}
+                  key={`${currentEmpId}-${currentEmail}-${currentUserId}`}
+                  className={`w-full px-3 py-2 text-left hover:bg-accent text-sm ${isSelected ? "bg-accent font-medium text-accent-foreground" : ""
+                    }`}
+                  onClick={() => handleSelect(currentEmpId, currentEmail, displayName, currentUserId)}
                 >
                   <div className="font-medium">
                     {currentEmpId} - {displayName}

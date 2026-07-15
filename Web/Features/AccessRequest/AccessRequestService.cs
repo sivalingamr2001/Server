@@ -3,6 +3,7 @@ using MySqlConnector;
 using Server.Common;
 using Server.Features.AccessRequest;
 using Server.Features.DynamicQueryExecutor;
+using Server.Features.Users;
 using System.Data;
 
 namespace Server.Services;
@@ -14,6 +15,7 @@ namespace Server.Services;
 public sealed class AccessRequestService(
     IConfiguration configuration,
     IDynamicQueryExecutor executor,
+    IUserService userService,
     ILogger<AccessRequestService> logger) : IAccessRequestService
 {
     private readonly IDynamicQueryExecutor _executor = executor ?? throw new ArgumentNullException(nameof(executor));
@@ -942,7 +944,7 @@ public sealed class AccessRequestService(
         }
     }
 
-    public async Task<Result<(string? PrimaryHodId, string? SecondaryHodId)>> GetHodByFolderPathAsync(
+    public async Task<Result<(UserDto? PrimaryHod, UserDto? SecondaryHod)>> GetHodByFolderPathAsync(
         string folderPath,
         CancellationToken ct = default)
     {
@@ -956,16 +958,41 @@ public sealed class AccessRequestService(
                 new { ParentName = parentFolderName },
                 commandTimeout: 10,
                 cancellationToken: ct);
+
             if (folderHod == null)
-                return Result<(string?, string?)>.Failure("NotFound", $"No HOD configuration found for folder path: '{folderPath}'");
-            return Result<(string?, string?)>.Success((folderHod.PrimaryHodId, folderHod.SecondaryHodId));
+                return Result<(UserDto?, UserDto?)>.Failure("NotFound", $"No HOD configuration found for folder path: '{folderPath}'");
+
+            string? primaryId = folderHod.PrimaryHodId;
+            string? secondaryId = folderHod.SecondaryHodId;
+
+            // 1. Prepare async tasks to fetch profiles in parallel
+            Task<Result<UserDto>> primaryTask = !string.IsNullOrEmpty(primaryId)
+                ? userService.GetUserPortalProfileIdAsync(primaryId, ct)
+                : Task.FromResult(Result<UserDto>.Failure("Empty", "No ID"));
+
+            Task<Result<UserDto>> secondaryTask = !string.IsNullOrEmpty(secondaryId)
+                ? userService.GetUserPortalProfileIdAsync(secondaryId, ct)
+                : Task.FromResult(Result<UserDto>.Failure("Empty", "No ID"));
+
+            // 2. Wait for both API requests to complete concurrently
+            await Task.WhenAll(primaryTask, secondaryTask);
+
+            // 3. Extract and check the results safely
+            var primaryResult = await primaryTask;
+            var secondaryResult = await secondaryTask;
+
+            UserDto? primaryHod = primaryResult.IsSuccess ? primaryResult.Value : null;
+            UserDto? secondaryHod = secondaryResult.IsSuccess ? secondaryResult.Value : null;
+
+            return Result<(UserDto?, UserDto?)>.Success((primaryHod, secondaryHod));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogError(ex, "Error fetching HOD configuration for folder path: {FolderPath}.", folderPath);
-            return Result<(string?, string?)>.Failure("Database", "Failed to fetch HOD configuration.");
+            return Result<(UserDto?, UserDto?)>.Failure("Database", "Failed to fetch HOD configuration.");
         }
     }
+
 
     // ═══════════════════════════════════════════════════════
     // UPDATE

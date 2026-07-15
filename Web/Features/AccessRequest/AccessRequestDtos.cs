@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Server.Features.Users;
+using System.ComponentModel.DataAnnotations;
 
 namespace Server.Features.AccessRequest;
 
@@ -147,4 +148,7 @@ public class AccessDashboardMetricsDto
     public int TotalPendingAction { get; set; }
 }
 
-public record HodConfigurationDto(string? PrimaryHodId, string? SecondaryHodId);
+public record HodConfigurationDto(
+    UserDto? PrimaryHod,
+    UserDto? SecondaryHod
+);

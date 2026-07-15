@@ -1,4 +1,5 @@
 ﻿using Server.Common;
+using Server.Features.Users;
 
 namespace Server.Features.AccessRequest;
 
@@ -33,9 +34,9 @@ public interface IAccessRequestService
         int requestId,
         CancellationToken ct = default);
 
-    Task<Result<(string? PrimaryHodId, string? SecondaryHodId)>> GetHodByFolderPathAsync(
-        string folderPath,
-        CancellationToken ct = default);
+    Task<Result<(UserDto? PrimaryHod, UserDto? SecondaryHod)>> GetHodByFolderPathAsync(
+            string folderPath,
+            CancellationToken ct = default);
 
     Task<Result> UpdateItemAsync(
         UpdateAccessItemDto dto,

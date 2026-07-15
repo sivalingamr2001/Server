@@ -1,4 +1,4 @@
-import loginApi, { type LoginRequestDto } from "@/api/loginApi"
+import { authService, type LoginRequest } from "@/api"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -32,10 +32,10 @@ export const LoginPage = () => {
     await handleLogin({ identifier, password })
   }
 
-  const handleLogin = async (credentials: LoginRequestDto) => {
+  const handleLogin = async (credentials: LoginRequest) => {
     try {
       const response: any = await withLoader(() =>
-        loginApi.getCurrentUserProfile(credentials)
+        authService.login(credentials)
       )
 
       if (response && response.isAuthenticated) {

@@ -13,15 +13,17 @@ export type UserSectionValue = {
   departmentName?: string | null
   hodName?: string | null
   itsrNumber?: string | null
-  hodId?: string | null 
+  hodId?: string | null
 }
 
 type UserSectionProps = {
   value: UserSectionValue
   onChange: (field: keyof UserSectionValue, fieldValue: string | number | boolean) => void
+  // Added properties to accept parsed data sets passed down from parent components
+  hodOptions?: SelectedHod[]
 }
 
-export function UserSection({ value, onChange }: UserSectionProps) {
+export function UserSection({ value, onChange, hodOptions = [] }: UserSectionProps) {
   // Local state tracker to control workspace layout height expansion properties
   const [isCollapsed, setIsCollapsed] = useState(false)
 
@@ -68,8 +70,8 @@ export function UserSection({ value, onChange }: UserSectionProps) {
           </Field>
 
           <Field label="Employee Name">
-            <Input 
-              value={value.name} 
+            <Input
+              value={value.name}
               onChange={(e) => onChange("name", e.target.value)}
               placeholder="Enter employee name"
             />
@@ -80,15 +82,26 @@ export function UserSection({ value, onChange }: UserSectionProps) {
           </Field>
 
           <Field label="Department HOD">
-            <HodSelect 
-              value={value.hodName && value.hodId ? { employeeId: value.hodId, hodName: value.hodName, email: "" } : null} 
-              onChange={handleHodChange} 
+            <HodSelect
+              /* 
+                FIXED: Changed tracking fields from the base logged-in user profile
+                to map explicitly to the selected HOD identifiers (`hodId`, `hodName`)
+              */
+              value={value.hodId ? {
+                userId: 0, // Fallback safe mock ID structure 
+                employeeId: value.hodId,
+                hodName: value.hodName || value.hodId,
+                email: ""
+              } : null}
+              onChange={handleHodChange}
+              // Forwards the folder path matches down into the list selector rendering logic
+              hodOptions={hodOptions}
             />
           </Field>
 
           <Field label="ITSR Number">
-            <Input 
-              value={value.itsrNumber ?? ""} 
+            <Input
+              value={value.itsrNumber ?? ""}
               onChange={(e) => onChange("itsrNumber", e.target.value)}
               placeholder="Enter ITSR number"
             />

@@ -1,158 +1,205 @@
 // ─── Enums (Slightly altered to plain-object unions for erasableSyntaxOnly compatibility) ───
 
 export const AccessItemStatus = {
-    Submitted: 0,
-    HodApproved: 1,
-    HodRejected: 2,
-    OperatorApproved: 3,
-    OperatorRejected: 4,
-    AccessGranted: 5,
-    AccessDenied: 6,
-    AccessExpired: 7,
-    AccessRevoked: 8
+  Submitted: 0,
+  HodApproved: 1,
+  HodRejected: 2,
+  OperatorApproved: 3,
+  OperatorRejected: 4,
+  AccessGranted: 5,
+  AccessDenied: 6,
+  AccessExpired: 7,
+  AccessRevoked: 8
 } as const;
 export type AccessItemStatus = typeof AccessItemStatus[keyof typeof AccessItemStatus];
 
 export const AccessType = {
-    NotApplicable: 0,
-    ReadOnly: 1,
-    ReadAndWrite: 2
+  NotApplicable: 0,
+  ReadOnly: 1,
+  ReadAndWrite: 2
 } as const;
 export type AccessType = typeof AccessType[keyof typeof AccessType];
 
 export const ActiveState = {
-    Inactive: 0,
-    Active: 1
+  Inactive: 0,
+  Active: 1
 } as const;
 export type ActiveState = typeof ActiveState[keyof typeof ActiveState];
 
 export const AgreementState = {
-    NotAgreed: 0,
-    Agreed: 1
+  NotAgreed: 0,
+  Agreed: 1
 } as const;
 export type AgreementState = typeof AgreementState[keyof typeof AgreementState];
 
 // ─── DTOs & Responses ───────────────────────────────────
 
 export interface CreateAccessRequestDto {
-    requesterId: string;
-    requestedTo: string;
-    itsrNo?: string | null;
+  requesterId: string;
+  requestedTo: string;
+  itsrNo?: string | null;
 }
 
 export interface CreateAccessItemDto {
-    ticketNo?: string | null;
-    folderPath: string;
-    accessType: AccessType;
-    reasonForAccess?: string | null;
+  ticketNo?: string | null;
+  folderPath: string;
+  accessType: AccessType;
+  reasonForAccess?: string | null;
 }
 
 export interface CreateAccessRequestWithItemsDto {
-    request: CreateAccessRequestDto;
-    items: CreateAccessItemDto[];
+  request: CreateAccessRequestDto;
+  items: CreateAccessItemDto[];
 }
 
 export interface UpdateAccessItemDto {
-    accessItemId: number;
-    folderPath?: string | null;
-    accessType?: AccessType | null;
-    confirmAccessType?: AccessType | null;
-    reasonForAccess?: string | null;
+  accessItemId: number;
+  folderPath?: string | null;
+  accessType?: AccessType | null;
+  confirmAccessType?: AccessType | null;
+  reasonForAccess?: string | null;
 }
 
 export interface HodApproveOrRejectDto {
-    accessItemId: number;
-    status: AccessItemStatus;
-    folderPath?: string | null;
-    confirmAccessType?: AccessType | null;
-    comments?: string | null;
+  accessItemId: number;
+  status: AccessItemStatus;
+  folderPath?: string | null;
+  confirmAccessType?: AccessType | null;
+  comments?: string | null;
 }
 
 export interface OperatorApproveOrRejectDto {
-    accessItemId: number;
-    status: AccessItemStatus;
-    operatorApproverId: string;
-    comments?: string | null;
+  accessItemId: number;
+  status: AccessItemStatus;
+  operatorApproverId: string;
+  comments?: string | null;
 }
 
 export interface AccessRequestRenewalDto {
-    accessItemId: number;
-    accessType: AccessType;
-    confirmAccessType?: AccessType | null;
+  accessItemId: number;
+  accessType: AccessType;
+  confirmAccessType?: AccessType | null;
 }
 
 export interface AccessRequestRevokeDto {
-    accessItemId: number;
+  accessItemId: number;
 }
 
 export interface DeleteAccessItemDto {
-    accessItemId: number;
-    modifiedBy: string;
+  accessItemId: number;
+  modifiedBy: string;
 }
 
 export interface AccessRequestFilterDto {
-    requesterId?: string | null;
-    requestedTo?: string | null;
-    status?: AccessItemStatus | null;
-    accessType?: AccessType | null;
+  requesterId?: string | null;
+  requestedTo?: string | null;
+  status?: AccessItemStatus | null;
+  accessType?: AccessType | null;
 }
 
 export interface AccessItemResponse {
-    id: number;
-    accessRequestId: number;
-    ticketNo: string;
-    status: AccessItemStatus;
-    folderPath: string;
-    accessType: AccessType;
-    confirmAccessType: AccessType | null;
-    reasonForAccess: string | null;
-    comments: string | null;
-    operatorApproverId: string | null;
-    operatorApproverName: string | null;
-    operatorApproverEmail: string | null;
-    createdOn: string;
-    modifiedOn: string | null;
+  id: number;
+  accessRequestId: number;
+  ticketNo: string;
+  status: AccessItemStatus;
+  folderPath: string;
+  accessType: AccessType;
+  confirmAccessType: AccessType | null;
+  reasonForAccess: string | null;
+  comments: string | null;
+  operatorApproverId: string | null;
+  operatorApproverName: string | null;
+  operatorApproverEmail: string | null;
+  createdOn: string;
+  modifiedOn: string | null;
 }
 
 export interface AccessRequestResponse {
-    id: number;
-    requesterId: string;
-    requesterName: string | null;
-    requesterEmail: string | null;
-    requestedTo: string;
-    requestedToName: string | null;
-    requestedToEmail: string | null;
-    isAgreed: AgreementState;
-    itsrNo: string | null;
-    createdOn: string;
-    modifiedOn: string | null;
-    isActive: ActiveState;
-    items: AccessItemResponse[];
+  id: number;
+  requesterId: string;
+  requesterName: string | null;
+  requesterEmail: string | null;
+  requestedTo: string;
+  requestedToName: string | null;
+  requestedToEmail: string | null;
+  isAgreed: AgreementState;
+  itsrNo: string | null;
+  createdOn: string;
+  modifiedOn: string | null;
+  isActive: ActiveState;
+  items: AccessItemResponse[];
 }
 
 export interface PagedResponse<T> {
-    data: T[];
-    pagination: PaginationMeta;
+  data: T[];
+  pagination: PaginationMeta;
 }
 
 export interface PaginationMeta {
-    page: number;
-    pageSize: number;
-    totalPages: number;
-    totalCount: number;
-    hasNext: boolean;
-    hasPrevious: boolean;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  totalCount: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
 
 export interface UserProfileInfo {
-    name: string;
-    email: string;
+  name: string;
+  email: string;
+}
+
+export interface HodConfigurationDto {
+  PrimaryHodId?: string | null;
+  SecondaryHodId?: string | null;
+  primaryHodId?: string | null;
+  secondaryHodId?: string | null;
+}
+
+interface ApiResponseEnvelope<T> {
+  value?: T | null;
+  isSuccess?: boolean;
+  isFailure?: boolean;
+  error?: {
+    code?: string;
+    message?: string;
+  };
+}
+
+export interface DashboardMetrics {
+  totalAccessItems: number;
+  activeItems: number;
+  inactiveItems: number;
+  status_Submitted: number;
+  status_HodApproved: number;
+  status_HodRejected: number;
+  status_OperatorApproved: number;
+  status_OperatorRejected: number;
+  status_AccessGranted: number;
+  status_AccessDenied: number;
+  status_AccessExpired: number;
+  status_AccessRevoked: number;
+  type_NotApplicable: number;
+  type_ReadOnly: number;
+  type_ReadAndWrite: number;
+  totalPendingAction: number;
 }
 
 import type { AxiosRequestConfig } from 'axios';
 import axiosClient from './axiosClient';
 
+
 export const accessRequestService = {
+  /**
+   * Fetch real-time aggregated metrics for the dashboard views
+   */
+  getDashboardMetrics: async (
+    config?: AxiosRequestConfig
+  ): Promise<DashboardMetrics> => { // Fixed wrapper syntax: returns the object directly
+    const response = await axiosClient.get<DashboardMetrics>('/AccessRequest/dashboard-metrics', config);
+    return response.data;
+  },
+
   // ═══════════════════════════════════════════════════════
   // CREATE
   // ═══════════════════════════════════════════════════════
@@ -164,7 +211,7 @@ export const accessRequestService = {
     dto: CreateAccessRequestWithItemsDto,
     config?: AxiosRequestConfig
   ): Promise<AccessRequestResponse> => {
-    const response = await axiosClient.post<AccessRequestResponse>('/v1/AccessRequest', dto, config);
+    const response = await axiosClient.post<AccessRequestResponse>('/AccessRequest', dto, config);
     return response.data;
   },
 
@@ -180,7 +227,7 @@ export const accessRequestService = {
     config?: AxiosRequestConfig
   ): Promise<AccessRequestResponse[]> => {
     const encodedUserId = encodeURIComponent(userId);
-    const response = await axiosClient.get<AccessRequestResponse[]>(`/v1/AccessRequest/user/${encodedUserId}`, config);
+    const response = await axiosClient.get<AccessRequestResponse[]>(`/AccessRequest/user/${encodedUserId}`, config);
     return response.data;
   },
 
@@ -192,7 +239,7 @@ export const accessRequestService = {
     config?: AxiosRequestConfig
   ): Promise<AccessRequestResponse[]> => {
     const encodedHodUserId = encodeURIComponent(hodUserId);
-    const response = await axiosClient.get<AccessRequestResponse[]>(`/v1/AccessRequest/hod/${encodedHodUserId}`, config);
+    const response = await axiosClient.get<AccessRequestResponse[]>(`/AccessRequest/hod/${encodedHodUserId}`, config);
     return response.data;
   },
 
@@ -202,7 +249,7 @@ export const accessRequestService = {
   getOperatorQueue: async (
     config?: AxiosRequestConfig
   ): Promise<AccessRequestResponse[]> => {
-    const response = await axiosClient.get<AccessRequestResponse[]>('/v1/AccessRequest/operator', config);
+    const response = await axiosClient.get<AccessRequestResponse[]>('/AccessRequest/operator', config);
     return response.data;
   },
 
@@ -213,7 +260,7 @@ export const accessRequestService = {
     id: number,
     config?: AxiosRequestConfig
   ): Promise<AccessRequestResponse> => {
-    const response = await axiosClient.get<AccessRequestResponse>(`/v1/AccessRequest/${id}`, config);
+    const response = await axiosClient.get<AccessRequestResponse>(`/AccessRequest/${id}`, config);
     return response.data;
   },
 
@@ -224,7 +271,7 @@ export const accessRequestService = {
     id: number,
     config?: AxiosRequestConfig
   ): Promise<AccessRequestResponse> => {
-    const response = await axiosClient.get<AccessRequestResponse>(`/v1/AccessRequest/item/${id}`, config);
+    const response = await axiosClient.get<AccessRequestResponse>(`/AccessRequest/item/${id}`, config);
     return response.data;
   },
 
@@ -235,8 +282,22 @@ export const accessRequestService = {
     requestId: number,
     config?: AxiosRequestConfig
   ): Promise<AccessItemResponse[]> => {
-    const response = await axiosClient.get<AccessItemResponse[]>(`/v1/AccessRequest/${requestId}/items`, config);
+    const response = await axiosClient.get<AccessItemResponse[]>(`/AccessRequest/${requestId}/items`, config);
     return response.data;
+  },
+
+  /**
+   * Get the HOD's user ID based on a given folder path
+   * public record HodConfigurationDto(UserDto? PrimaryHod, UserDto? SecondaryHod);
+   * @param folderPath 
+   */
+  getHodIdByFolderPath: async (
+    folderPath: string,
+    config?: AxiosRequestConfig
+  ): Promise<HodConfigurationDto | null> => {
+    const encodedFolderPath = encodeURIComponent(folderPath);
+    const response = await axiosClient.get<ApiResponseEnvelope<HodConfigurationDto>>(`/AccessRequest/get-hodby-folderpath?folderPath=${encodedFolderPath}`, config);
+    return response.data.value || null; // Return the value or null if not present
   },
 
   // ═══════════════════════════════════════════════════════
@@ -251,7 +312,7 @@ export const accessRequestService = {
     dto: UpdateAccessItemDto,
     config?: AxiosRequestConfig
   ): Promise<void> => {
-    await axiosClient.put<void>(`/v1/AccessRequest/items/${itemId}`, dto, config);
+    await axiosClient.put<void>(`/AccessRequest/items/${itemId}`, dto, config);
   },
 
   /**
@@ -262,7 +323,7 @@ export const accessRequestService = {
     dto: HodApproveOrRejectDto,
     config?: AxiosRequestConfig
   ): Promise<void> => {
-    await axiosClient.post<void>(`/v1/AccessRequest/items/${itemId}/hod-decision`, dto, config);
+    await axiosClient.post<void>(`/AccessRequest/items/${itemId}/hod-decision`, dto, config);
   },
 
   operatorDecision: async (
@@ -270,7 +331,7 @@ export const accessRequestService = {
     dto: OperatorApproveOrRejectDto,
     config?: AxiosRequestConfig
   ): Promise<void> => {
-    await axiosClient.post<void>(`/v1/AccessRequest/items/${itemId}/operator-decision`, dto, config);
+    await axiosClient.post<void>(`/AccessRequest/items/${itemId}/operator-decision`, dto, config);
   },
 
   /**
@@ -282,7 +343,7 @@ export const accessRequestService = {
     dto: AccessRequestRenewalDto,
     config?: AxiosRequestConfig
   ): Promise<void> => {
-    await axiosClient.post<void>(`/v1/AccessRequest/items/${itemId}/renew`, dto, config);
+    await axiosClient.post<void>(`/AccessRequest/items/${itemId}/renew`, dto, config);
   },
 
   /**
@@ -294,7 +355,7 @@ export const accessRequestService = {
     dto: AccessRequestRevokeDto,
     config?: AxiosRequestConfig
   ): Promise<void> => {
-    await axiosClient.post<void>(`/v1/AccessRequest/items/${itemId}/revoke`, dto, config);
+    await axiosClient.post<void>(`/AccessRequest/items/${itemId}/revoke`, dto, config);
   },
 
   /**
@@ -307,7 +368,7 @@ export const accessRequestService = {
     config?: AxiosRequestConfig
   ): Promise<void> => {
     // Passing the DTO (modifiedBy) in the config data wrapper for a DELETE request
-    await axiosClient.delete<void>(`/v1/AccessRequest/items/${itemId}`, { ...config, data: dto });
+    await axiosClient.delete<void>(`/AccessRequest/items/${itemId}`, { ...config, data: dto });
   },
 
   /**
@@ -320,7 +381,7 @@ export const accessRequestService = {
     config?: AxiosRequestConfig
   ): Promise<void> => {
     // Passing string modifiedBy parameter via URL query parameters or request body context
-    await axiosClient.delete<void>(`/v1/AccessRequest/${id}`, {
+    await axiosClient.delete<void>(`/AccessRequest/${id}`, {
       ...config,
       params: { modifiedBy }
     });

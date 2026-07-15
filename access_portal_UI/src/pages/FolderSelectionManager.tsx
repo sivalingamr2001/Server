@@ -1,5 +1,4 @@
-import type { FolderDto } from "@/api"
-import { accessManagementApi } from "@/api/accessManagementApi"
+import { folderService, type FolderDto } from "@/api"
 import { FolderPathSheet } from "@/components/AccessRequest/folder-pathSheet"
 import { useEffect, useState } from "react"
 
@@ -16,7 +15,7 @@ export default function FolderSelectionManager() {
             setLoading(true)
             setError(null)
             try {
-                const data = await accessManagementApi.folders.getFoldersHierarchy()
+                const data: any = await folderService.getStrictFolderHierarchy()
                 setFlatFolders(data)
             } catch (err) {
                 console.error("Failed to load audit folders:", err)

@@ -15,7 +15,7 @@ import { Textarea } from "../ui/textarea"
 import { useAuth } from "@/context/AuthContext"
 import { useLoader } from "@/hooks/useLoader"
 import { FolderPathSheet } from "./folder-pathSheet"
-import accessManagementApi from "@/api/accessManagementApi"
+import { folderService } from "@/api"
 
 type FolderNode = {
   driveName: string
@@ -34,6 +34,7 @@ export type RequestItem = {
 type AccessDetailsSectionProps = {
   items?: RequestItem[]
   onItemsChange?: (items: RequestItem[]) => void
+  onFolderPathSelected?: (itemId: number, folderPath: string) => void
 }
 
 const requestTypes = [
@@ -64,6 +65,7 @@ function mapFolderNode(folder: any): FolderNode {
 function AccessDetailsSection({
   items: controlledItems,
   onItemsChange,
+  onFolderPathSelected,
 }: AccessDetailsSectionProps) {
   const [items, setItems] = useState<RequestItem[]>(() =>
     controlledItems && controlledItems.length > 0
@@ -111,7 +113,7 @@ function AccessDetailsSection({
 
     const loadFolders = async () => {
       const result = await withLoader(() =>
-        accessManagementApi.folders.getFoldersHierarchy()
+        folderService.getStrictFolderHierarchy()
       );
 
       if (cancelled || !result) return;
@@ -359,6 +361,7 @@ function AccessDetailsSection({
           if (!activeItemId) return
 
           updateItem(activeItemId, "folderPath", path)
+          onFolderPathSelected?.(activeItemId, path)
         }}
       />
     </>

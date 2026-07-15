@@ -24,7 +24,7 @@ export interface UserDto {
   modifiedOn: string | null;
   isActive: number;
 }
-
+  
 export interface UpdateUserRoleRequest {
   userId: string;
   role: UserRole;

@@ -1,11 +1,12 @@
-﻿import accessManagementApi from "@/api/accessManagementApi";
+﻿import { accessRequestService } from "@/api";
 import { CreateRequestModal } from "@/components/AccessRequest/create-request-modal";
 import DynamicGrid from "@/components/DynamicGrid";
 import type { GridActionButton } from "@/components/DynamicGrid/types";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 import { useLoader } from "@/hooks/useLoader";
 import { ACCESS_TYPE_MAP, DEFAULT_STATUS, getAccessTypeLabel, STATUS_MAP } from "@/lib/utils";
-import { Download, Eye, Plus } from "lucide-react";
+import { Eye, Plus } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -15,10 +16,11 @@ export const MyRequestsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // 1. Added visibility tracker state
   const { loading, withLoader } = useLoader();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   const loadAllRequests = useCallback(async () => {
     try {
-      const res = await withLoader(() => accessManagementApi.requests.getAll());
+      const res = await withLoader(() => accessRequestService.getAllByUserId(currentUser?.currentUser?.userId || ""));
       setRequests(res || []);
     } catch (error) {
       setRequests([]);
@@ -110,13 +112,6 @@ export const MyRequestsPage: React.FC = () => {
   ], [handleViewClick]);
 
   const actionButtons = useMemo<GridActionButton[]>(() => [
-    {
-      label: "Export Logs",
-      onClick: () => toast.info("Exporting records..."),
-      variant: "secondary",
-      isDisabled: loading,
-      icon: Download,
-    },
     {
       label: "New Request",
       // 2. Wired up action to launch creation workflow workspace modal directly
